@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>paso #9 del juego 2D </title>
+    
+    <style>* { padding: 0; margin: 0; } canvas { background: #808000; display: block; margin: 0 auto; * {cursor: none;} } </style>
+</head>
+<body>
+
+<canvas id="miCanvas" width="300" height="200"></canvas>
+
+<script>
+    var canvas = document.getElementById("miCanvas");
+    var ctx = canvas.getContext("2d");
+
+    var bolaRadio = 5;
+    var x = canvas.width/2;
+    var y = canvas.height-30;
+    var dx = -2;
+    var dy = -2;
+
+    var alturaPaleta = 6;
+    var anchuraPaleta = 60;
+    var paletaPosX = (canvas.width-anchuraPaleta)/2;
+
+    var flechaDerechaPresionada = false;
+    var flechaIzquierdaPresionada = false;
+
+    var nroFilasLadrillos = 9;
+    var nroColumnasLadrillos = 4;
+    var anchuraLadrillo = 20;
+    var alturaLadrillo = 8;
+    var rellenoLadrillo = 10;
+    var vacioSuperiorLadrillo = 20;
+    var vacioIzquierdoLadrillo = 20;
+    
+    var puntaje = 0;
+
+    
+    var vidas = 5;
+
+   
+    var colorFigura = "#ff0000";
+    var colorBola = "#137B13";
+    var colorPaleta = "#137B13";
+    var colorLadrillo = "#00FF00";
+    var colorTexto = "#000000";
+
+    
+    canvas.style.cursor = 'none';
+
+    var ladrillos = [];
+    for(var c=0; c<nroColumnasLadrillos; c++) {
+        ladrillos[c] = [];
+        for(var f=0; f<nroFilasLadrillos; f++) {
+            ladrillos[c][f] = { x: 0, y: 0, estado: 1 };
+        }
+    }
+
+    document.addEventListener("keydown", manejadorTeclaPresionada, false);
+    document.addEventListener("keyup", manejadorTeclaLiberada, false);
+    document.addEventListener("mousemove", manejadorRaton, false);
+
+    function manejadorTeclaPresionada(e) {
+        if(e.keyCode == 39) {
+            flechaDerechaPresionada = true;
+        }
+        else if(e.keyCode == 37){
+            flechaIzquierdaPresionada = true;
+        }
+    }
+
+    function manejadorTeclaLiberada(e) {
+        if(e.keyCode == 39) {
+            flechaDerechaPresionada = false;
+        }
+        else if(e.keyCode == 37) {
+            flechaIzquierdaPresionada = false;
+        }
+    }
+
+    function manejadorRaton(e) {
+        var posXRatonDentroDeCanvas = e.clientX - canvas.offsetLeft;
+        if(posXRatonDentroDeCanvas > 0 && posXRatonDentroDeCanvas < canvas.width) {
+            paletaPosX = posXRatonDentroDeCanvas - anchuraPaleta/2;
+        }
+    }
+
+    function detectarColision() {
+        for(var c=0; c<nroColumnasLadrillos; c++) {
+            for(var f=0; f<nroFilasLadrillos; f++) {
+                var b = ladrillos[c][f];
+                if(b.estado == 1) {
+                    if(x > b.x && x < b.x+anchuraLadrillo && y > b.y && y < b.y+alturaLadrillo) {
+                        dy = -dy;
+                        b.estado = 0;
+                        puntaje++;
+                        if(puntaje == nroFilasLadrillos*nroColumnasLadrillos) {
+                            alert("Haz Ganado, Campeón!");
+                            document.location.reload();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function dibujarBola() {
+        ctx.beginPath();
+        ctx.arc(x, y, bolaRadio, 0, Math.PI*2);
+        
+        ctx.fillStyle = colorBola;
+        ctx.fill();
+        ctx.closePath();
+    }
+    function dibujarPaleta() {
+        ctx.beginPath();
+        ctx.rect(paletaPosX, canvas.height-alturaPaleta, anchuraPaleta, alturaPaleta);
+        ctx.fillStyle = colorPaleta;
+        ctx.fill();
+        ctx.closePath();
+    }
+    function dibujarLadrillos() {
+        for(var c=0; c<nroColumnasLadrillos; c++) {
+            for(var f=0; f<nroFilasLadrillos; f++) {
+                if(ladrillos[c][f].estado == 1) {
+                    var ladrilloX = (f*(anchuraLadrillo+rellenoLadrillo))+vacioIzquierdoLadrillo;
+                    var ladrilloY = (c*(alturaLadrillo+rellenoLadrillo))+vacioSuperiorLadrillo;
+                    ladrillos[c][f].x = ladrilloX;
+                    ladrillos[c][f].y = ladrilloY;
+                    ctx.beginPath();
+                    ctx.rect(ladrilloX, ladrilloY, anchuraLadrillo, alturaLadrillo);
+                    ctx.fillStyle = colorLadrillo;
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
+        }
+    }
+
+    function dibujarPuntaje() {
+        ctx.font = "16px Arial";
+        ctx.fillStyle = colorTexto;
+        ctx.fillText("puntaje: "+puntaje, 8, 20);
+    }
+
+    function dibujarVidas() {
+        ctx.font = "16px Arial";
+        ctx.fillStyle = colorTexto;
+        
+        ctx.fillText("vidas: "+vidas, canvas.width-65, 20);
+    }
+
+    function dibujar() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        dibujarLadrillos();
+        dibujarBola();
+        dibujarPaleta();
+        dibujarPuntaje();
+        dibujarVidas();
+        detectarColision();
+
+        if(x + dx > canvas.width-bolaRadio || x + dx < bolaRadio) {
+            dx = -dx;
+        }
+        if(y + dy < bolaRadio) {
+            dy = -dy;
+        }
+        else if(y + dy > canvas.height-bolaRadio) {
+            if(x > paletaPosX && x < paletaPosX + anchuraPaleta) {
+                dy = -dy;
+            }
+            else {
+            
+                vidas--;
+                if(!vidas) {
+                
+                    alert("En la Proxima será");
+                    document.location.reload();
+                    
+                }
+                else {
+                	
+                    x = canvas.width/2;
+                    y = canvas.height-30;
+                    dx = 3;
+                    dy = -3;
+                    paletaPosX = (canvas.width-anchuraPaleta)/2;
+                }
+            }
+        }
+
+        if(flechaDerechaPresionada && paletaPosX < canvas.width-anchuraPaleta) {
+            paletaPosX += 5;
+        }
+        else if(flechaIzquierdaPresionada && paletaPosX > 0) {
+            paletaPosX -= 5;
+        }
+
+        x += dx;
+        y += dy;
+
+      
+        requestAnimationFrame(dibujar);
+    }
+
+    dibujar();
+</script>
+
+</body>
+</html>
